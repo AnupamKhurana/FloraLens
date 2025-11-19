@@ -1,20 +1,28 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# FloraLens 🌿
 
-# Run and deploy your AI Studio app
+Welcome to **FloraLens**, the ultimate AI-powered plant enthusiast app designed to help you easily recognize plants and dive deep into their fascinating details!
 
-This contains everything you need to run your app locally.
+## Why FloraLens?
 
-View your app in AI Studio: https://ai.studio/apps/drive/1klNdZo5TKQ0tV3uFBbtq_1kooWahyW5Q
+Whether you're a seasoned botanist or just love discovering new plants, FloraLens makes plant identification effortless and fun. Simply snap a photo, and our intelligent AI does the hard work for you—bringing the wonders of nature right to your fingertips.
 
-## Run Locally
+## Features ✨
 
-**Prerequisites:**  Node.js
+- 📸 **AI-powered plant recognition**: Identify plants quickly with cutting-edge AI technology.
+- 📚 **Detailed plant profiles**: Learn about plant origins, care tips, and more.
+- 🖥️ **Responsive and intuitive UI**: A clean interface designed for smooth, enjoyable use.
+- 🔑 **Powered by Gemini API**: Harnessing the latest in AI to ensure accurate results.
 
+## Getting Started 🚀
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Follow these simple steps to get FloraLens running on your local machine:
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) installed
+- A valid Gemini API key for AI recognition (sign up at [AI Studio](https://ai.studio))
+
+### Installation
+
+1. Clone this repository:
+
