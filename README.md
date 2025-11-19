@@ -78,4 +78,3 @@ Please check with the repository owner for license details.
 Explore the world of plants like never before with FloraLens—where technology meets nature! 🌱
 ```
 
-This README uses triple backticks correctly around code blocks with language identifiers (bash) where needed, preserving the formatting perfectly for GitHub. Copy this entire block as your README.md content for best results.
