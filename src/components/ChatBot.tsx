@@ -1,13 +1,13 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, PlantInfo, AILanguageModel } from '../types';
 import { sendChatMessage, checkLocalAICapability, createLocalSession } from '../services/geminiService';
 
 interface ChatBotProps {
   plantContext?: PlantInfo;
+  isOnline: boolean;
 }
 
-export const ChatBot: React.FC<ChatBotProps> = ({ plantContext }) => {
+export const ChatBot: React.FC<ChatBotProps> = ({ plantContext, isOnline }) => {
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -59,6 +59,11 @@ export const ChatBot: React.FC<ChatBotProps> = ({ plantContext }) => {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    // Safety check for offline
+    if (!isOnline && !isLocalAI) {
+        return;
+    }
+
     const userMsg: ChatMessage = { role: 'user', text: input, timestamp: Date.now() };
     setHistory(prev => [...prev, userMsg]);
     setInput('');
@@ -68,17 +73,23 @@ export const ChatBot: React.FC<ChatBotProps> = ({ plantContext }) => {
       let responseText = "";
 
       if (isLocalAI && localSession) {
-        // Use Edge AI
+        // Use Edge AI (Works Offline)
         try {
            responseText = await localSession.prompt(input);
         } catch (e) {
           // Fallback if local session crashes/fails
-          console.warn("Local AI failed, falling back to cloud", e);
-          responseText = await sendChatMessage(history, input, plantContext);
+          if (isOnline) {
+             console.warn("Local AI failed, falling back to cloud", e);
+             responseText = await sendChatMessage(history, input, plantContext);
+          } else {
+             responseText = "I'm having trouble processing that offline. Please reconnect to the internet.";
+          }
         }
-      } else {
-        // Use Cloud AI
+      } else if (isOnline) {
+        // Use Cloud AI (Requires Internet)
         responseText = await sendChatMessage(history, input, plantContext);
+      } else {
+         responseText = "I cannot connect to the cloud right now. Please check your internet connection.";
       }
       
       const modelMsg: ChatMessage = { role: 'model', text: responseText, timestamp: Date.now() };
@@ -97,11 +108,13 @@ export const ChatBot: React.FC<ChatBotProps> = ({ plantContext }) => {
     }
   };
 
+  const isInputDisabled = isLoading || (!isOnline && !isLocalAI);
+
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-[2rem] shadow-2xl shadow-indigo-900/10 border border-white overflow-hidden ring-1 ring-black/5">
       
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-teal-600 p-6 text-white shadow-md z-10 relative overflow-hidden">
+      <div className={`p-6 text-white shadow-md z-10 relative overflow-hidden bg-gradient-to-r ${!isOnline ? 'from-gray-600 to-gray-500' : 'from-primary-600 to-teal-600'}`}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-xl -mr-10 -mt-10"></div>
         <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-4">
@@ -111,17 +124,28 @@ export const ChatBot: React.FC<ChatBotProps> = ({ plantContext }) => {
             <div>
               <h2 className="font-bold text-xl leading-tight">Flora Assistant</h2>
               <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full animate-pulse ${isLocalAI ? 'bg-yellow-300' : 'bg-green-300'}`}></span>
+                <span className={`w-2 h-2 rounded-full ${
+                    !isOnline 
+                        ? (isLocalAI ? 'bg-yellow-400 animate-pulse' : 'bg-red-400') 
+                        : (isLocalAI ? 'bg-yellow-300 animate-pulse' : 'bg-green-300 animate-pulse')
+                }`}></span>
                 <p className="text-green-50 text-xs font-medium opacity-90">
-                  {isLocalAI ? 'On-Device AI' : 'Cloud Connected'}
+                  {!isOnline 
+                    ? (isLocalAI ? 'Offline Mode (Available)' : 'Offline')
+                    : (isLocalAI ? 'On-Device AI' : 'Cloud Connected')
+                  }
                 </p>
               </div>
             </div>
           </div>
           
           {/* Badge for AI Type */}
-          <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border border-white/20 ${isLocalAI ? 'bg-yellow-400/20 text-yellow-50' : 'bg-white/20 text-white'}`}>
-             {isLocalAI ? '⚡ Edge Model' : '☁️ Gemini Pro'}
+          <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border border-white/20 ${
+              isLocalAI 
+                ? 'bg-yellow-400/20 text-yellow-50' 
+                : (!isOnline ? 'bg-gray-400/20 text-gray-200' : 'bg-white/20 text-white')
+          }`}>
+             {isLocalAI ? '⚡ Edge Model' : (!isOnline ? '🚫 Offline' : '☁️ Gemini Pro')}
           </div>
         </div>
       </div>
@@ -156,22 +180,26 @@ export const ChatBot: React.FC<ChatBotProps> = ({ plantContext }) => {
       </div>
 
       <div className="p-5 bg-white border-t border-gray-100">
-        <div className="flex items-end space-x-3 bg-gray-50 rounded-3xl border border-gray-200 px-4 py-3 focus-within:ring-2 focus-within:ring-primary-200 focus-within:border-primary-400 transition-all shadow-inner">
+        <div className={`flex items-end space-x-3 bg-gray-50 rounded-3xl border border-gray-200 px-4 py-3 focus-within:ring-2 focus-within:ring-primary-200 focus-within:border-primary-400 transition-all shadow-inner ${isInputDisabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isLocalAI ? "Ask quickly (On-Device)..." : "Ask a question..."}
-            className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 resize-none max-h-32 py-2 px-1 font-medium"
+            placeholder={
+                !isOnline && !isLocalAI 
+                    ? "Connect to internet to chat..." 
+                    : (isLocalAI ? "Ask quickly (On-Device)..." : "Ask a question...")
+            }
+            className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 resize-none max-h-32 py-2 px-1 font-medium disabled:cursor-not-allowed"
             rows={1}
-            disabled={isLoading}
+            disabled={isInputDisabled}
             style={{ minHeight: '24px' }}
           />
           <button 
             onClick={handleSend}
-            disabled={isLoading || !input.trim()}
+            disabled={isInputDisabled || !input.trim()}
             className={`p-2.5 rounded-xl flex items-center justify-center transition-all duration-200 ${
-              input.trim() && !isLoading 
+              input.trim() && !isInputDisabled 
                 ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30 hover:scale-105 hover:bg-primary-700' 
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
@@ -180,7 +208,9 @@ export const ChatBot: React.FC<ChatBotProps> = ({ plantContext }) => {
           </button>
         </div>
         <p className="text-center text-[10px] text-gray-400 mt-3 font-medium uppercase tracking-wider">
-          {isLocalAI ? '⚡ Running locally on Gemini Nano' : 'AI can make mistakes. Verify important info.'}
+          {!isOnline && !isLocalAI 
+            ? 'Offline: Chat Unavailable' 
+            : (isLocalAI ? '⚡ Running locally on Gemini Nano' : 'AI can make mistakes. Verify important info.')}
         </p>
       </div>
     </div>

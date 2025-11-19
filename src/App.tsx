@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AppView, PlantInfo } from './types';
-import { identifyPlant } from './services/geminiService';
+import { identifyPlant, identifyPlantLocal } from './services/geminiService';
+import { initMediaPipe, classifyImageOffline } from './services/mediaPipeService';
 import { PlantCard } from './components/PlantCard';
 import { ChatBot } from './components/ChatBot';
 
@@ -10,6 +11,24 @@ const App: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOfflineAnalysis, setIsOfflineAnalysis] = useState(false);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Initialize MediaPipe model immediately
+    initMediaPipe().catch(e => console.error("Failed to load offline vision model", e));
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -19,6 +38,7 @@ const App: React.FC = () => {
     setPlantData(null);
     setSelectedImage(null);
     setIsAnalyzing(true);
+    setIsOfflineAnalysis(false);
 
     let processFile = file;
 
@@ -46,21 +66,45 @@ const App: React.FC = () => {
     setSelectedImage(objectUrl);
 
     try {
-      const base64Data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(processFile);
-      });
+      if (isOnline) {
+        // ONLINE MODE: Use Cloud API
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(processFile);
+        });
 
-      const base64Content = base64Data.split(',')[1];
-      const mimeType = processFile.type;
+        const base64Content = base64Data.split(',')[1];
+        const mimeType = processFile.type;
 
-      const data = await identifyPlant(base64Content, mimeType);
-      setPlantData(data);
+        const data = await identifyPlant(base64Content, mimeType);
+        setPlantData(data);
+      } else {
+        // OFFLINE MODE: Use MediaPipe + Local AI
+        setIsOfflineAnalysis(true);
+        
+        // Create a temporary image element for MediaPipe to read
+        const img = new Image();
+        img.src = objectUrl;
+        await new Promise((resolve) => { img.onload = resolve; });
+        
+        // 1. Vision: Classify
+        const labels = classifyImageOffline(img);
+        if (labels.length === 0) {
+            throw new Error("Could not identify object in offline mode.");
+        }
+
+        // 2. Reasoning: Generate details
+        const data = await identifyPlantLocal(labels);
+        setPlantData(data);
+      }
     } catch (err) {
       console.error(err);
-      setError("Failed to identify the plant. Please try another clear photo.");
+      setError(isOnline 
+        ? "Failed to identify the plant. Please try another clear photo."
+        : "Offline identification failed. Try a clearer photo or reconnect to internet."
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -71,12 +115,24 @@ const App: React.FC = () => {
     setPlantData(null);
     setError(null);
     setView(AppView.ANALYZE);
+    setIsOfflineAnalysis(false);
   };
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-800">
+      
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="bg-amber-500 text-white px-4 py-2 text-center text-sm font-bold sticky top-0 z-[60] shadow-md animate-slide-up">
+          <span className="flex items-center justify-center gap-2">
+            <span className="material-icons-round text-lg">wifi_off</span>
+            You are offline. Using on-device AI (MediaPipe + Nano) for analysis.
+          </span>
+        </div>
+      )}
+
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-200/50 transition-all duration-300 supports-[backdrop-filter]:bg-white/60">
+      <header className={`sticky ${!isOnline ? 'top-10' : 'top-0'} z-50 bg-white/90 backdrop-blur-lg border-b border-gray-200/50 transition-all duration-300 supports-[backdrop-filter]:bg-white/60`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div 
             className="flex items-center gap-3 cursor-pointer group select-none" 
@@ -141,10 +197,12 @@ const App: React.FC = () => {
                      
                      {/* Main Content */}
                      <div className="relative z-20 flex flex-col items-center max-w-4xl mx-auto">
-                        <div className="mb-8 relative group cursor-pointer hover:scale-105 transition-transform duration-500">
+                        <div className={`mb-8 relative group cursor-pointer hover:scale-105 transition-transform duration-500`}>
                           <div className="absolute inset-0 bg-white/20 rounded-[2.5rem] blur-xl group-hover:blur-2xl transition-all duration-500"></div>
                           <div className="relative bg-white/10 backdrop-blur-md border border-white/40 p-8 rounded-[2rem] shadow-2xl">
-                            <span className="material-icons-round text-7xl text-white drop-shadow-lg">add_a_photo</span>
+                            <span className="material-icons-round text-7xl text-white drop-shadow-lg">
+                              {isOnline ? 'add_a_photo' : 'wifi_off'}
+                            </span>
                           </div>
                         </div>
 
@@ -154,14 +212,18 @@ const App: React.FC = () => {
                         </h2>
                         
                         <p className="text-emerald-50 text-xl md:text-2xl mb-12 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-sm">
-                          Snap a photo to instantly identify plants, get expert care tips, and chat with our AI botanist.
+                           {isOnline 
+                             ? "Snap a photo to instantly identify plants, get expert care tips, and chat with our AI botanist."
+                             : "Offline Mode: Using on-device computer vision to identify plants without internet."}
                         </p>
                         
-                        <label className="group relative inline-flex items-center justify-center px-10 py-5 font-bold text-emerald-900 transition-all duration-300 bg-white text-xl rounded-full focus:outline-none hover:bg-emerald-50 hover:shadow-xl hover:shadow-emerald-900/20 hover:-translate-y-1 cursor-pointer overflow-hidden ring-4 ring-white/30 z-30">
+                        <label className={`group relative inline-flex items-center justify-center px-10 py-5 font-bold text-emerald-900 transition-all duration-300 bg-white text-xl rounded-full focus:outline-none overflow-hidden ring-4 ring-white/30 z-30 hover:bg-emerald-50 hover:shadow-xl hover:shadow-emerald-900/20 hover:-translate-y-1 cursor-pointer`}>
                           <span className="absolute inset-0 w-full h-full bg-gradient-to-br from-white to-emerald-50 opacity-100 group-hover:opacity-90 transition-opacity"></span>
                           <span className="relative flex items-center gap-3">
-                            <span className="material-icons-round text-3xl group-hover:rotate-12 transition-transform text-emerald-600">upload_file</span>
-                            Upload Plant Photo
+                            <span className="material-icons-round text-3xl group-hover:rotate-12 transition-transform text-emerald-600">
+                               {isOnline ? 'upload_file' : 'document_scanner'}
+                            </span>
+                            {isOnline ? 'Upload Plant Photo' : 'Scan Offline'}
                           </span>
                           <input 
                             type="file" 
@@ -237,14 +299,18 @@ const App: React.FC = () => {
                               <span className="material-icons-round text-4xl animate-pulse text-white">smart_toy</span>
                            </div>
                         </div>
-                        <h3 className="font-bold text-3xl tracking-tight mb-3">Analyzing...</h3>
-                        <p className="text-white/90 font-medium text-lg">Identifying species & health</p>
+                        <h3 className="font-bold text-3xl tracking-tight mb-3">
+                            {isOfflineAnalysis ? 'Scanning Offline...' : 'Analyzing...'}
+                        </h3>
+                        <p className="text-white/90 font-medium text-lg">
+                            {isOfflineAnalysis ? 'Identifying via MediaPipe' : 'Identifying species & health'}
+                        </p>
                       </div>
                     )}
 
                     {/* Edit button */}
                     {!isAnalyzing && (
-                      <label className="absolute bottom-6 right-6 bg-white/90 hover:bg-white text-emerald-900 p-4 rounded-2xl shadow-xl cursor-pointer transition-all transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 backdrop-blur-md z-20 hover:scale-110 ring-1 ring-black/5">
+                      <label className={`absolute bottom-6 right-6 bg-white/90 text-emerald-900 p-4 rounded-2xl shadow-xl transition-all transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 backdrop-blur-md z-20 ring-1 ring-black/5 hover:bg-white cursor-pointer hover:scale-110`}>
                         <span className="material-icons-round text-2xl">edit</span>
                         <input 
                           type="file" 
@@ -257,13 +323,17 @@ const App: React.FC = () => {
                   </div>
                   
                   {!isAnalyzing && plantData && (
-                    <div className="bg-emerald-50 rounded-2xl p-5 flex items-center gap-4 border border-emerald-100 shadow-sm">
-                      <div className="bg-white p-3 rounded-xl shadow-sm text-emerald-600 ring-1 ring-emerald-100">
-                        <span className="material-icons-round text-2xl">check_circle</span>
+                    <div className={`${isOfflineAnalysis ? 'bg-amber-50 border-amber-100' : 'bg-emerald-50 border-emerald-100'} rounded-2xl p-5 flex items-center gap-4 border shadow-sm`}>
+                      <div className={`bg-white p-3 rounded-xl shadow-sm ${isOfflineAnalysis ? 'text-amber-600 ring-amber-100' : 'text-emerald-600 ring-emerald-100'} ring-1`}>
+                        <span className="material-icons-round text-2xl">{isOfflineAnalysis ? 'bolt' : 'check_circle'}</span>
                       </div>
                       <div>
-                        <p className="text-emerald-900 font-bold text-base">Analysis Complete</p>
-                        <p className="text-emerald-700/80 text-sm font-medium">Confidence: High</p>
+                        <p className={`${isOfflineAnalysis ? 'text-amber-900' : 'text-emerald-900'} font-bold text-base`}>
+                            {isOfflineAnalysis ? 'Offline Analysis Complete' : 'Cloud Analysis Complete'}
+                        </p>
+                        <p className={`${isOfflineAnalysis ? 'text-amber-700/80' : 'text-emerald-700/80'} text-sm font-medium`}>
+                            {isOfflineAnalysis ? 'Generated by MediaPipe + Nano' : 'Confidence: High'}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -338,7 +408,7 @@ const App: React.FC = () => {
                 </p>
               </div>
             </div>
-            <ChatBot plantContext={plantData || undefined} />
+            <ChatBot plantContext={plantData || undefined} isOnline={isOnline} />
           </div>
         )}
       </main>
