@@ -13,6 +13,12 @@ Whether you're a seasoned botanist or just love discovering new plants, FloraLen
 - 🖥️ **Responsive and intuitive UI**: A clean interface designed for smooth, enjoyable use.
 - 🔑 **Powered by Gemini API**: Harnessing the latest in AI to ensure accurate results.
 
+## Demo
+
+Experience the magic yourself by visiting our AI Studio app:
+
+[Try FloraLens on AI Studio](https://ai.studio/apps/drive/1klNdZo5TKQ0tV3uFBbtq_1kooWahyW5Q)
+
 ## Getting Started 🚀
 
 Follow these simple steps to get FloraLens running on your local machine:
@@ -26,3 +32,50 @@ Follow these simple steps to get FloraLens running on your local machine:
 
 1. Clone this repository:
 
+   ```
+   git clone https://github.com/AnupamKhurana/FloraLens.git
+   cd FloraLens
+   ```
+
+2. Install dependencies:
+
+   ```
+   npm install
+   ```
+
+3. Configure your API key:
+
+   Create a `.env.local` file in the root directory with:
+
+   ```
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+
+4. Start the app:
+
+   ```
+   npm run dev
+   ```
+
+5. Open your browser and go to `http://localhost:3000` to start exploring plants instantly!
+
+## Contributing 🤝
+
+FloraLens is a growing project, and contributions are warmly welcomed! Feel free to:
+
+- Report issues
+- Suggest new features
+- Submit pull requests
+
+Please adhere to the code of conduct when contributing.
+
+## License
+
+Please check with the repository owner for license details.
+
+---
+
+Explore the world of plants like never before with FloraLens—where technology meets nature! 🌱
+```
+
+This README uses triple backticks correctly around code blocks with language identifiers (bash) where needed, preserving the formatting perfectly for GitHub. Copy this entire block as your README.md content for best results.
