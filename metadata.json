@@ -1,0 +1,7 @@
+{
+  "name": "FloraLens",
+  "description": "An intelligent gardening assistant that identifies plants from photos and provides detailed care instructions and chat support.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
