@@ -1,80 +1,116 @@
-# FloraLens 🌿
+# 🌿 FloraLens — AI Botanical Identification & Plant Care Assistant
 
-Welcome to **FloraLens**, the ultimate AI-powered plant enthusiast app designed to help you easily recognize plants and dive deep into their fascinating details!
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
+[![Google GenAI SDK](https://img.shields.io/badge/Google_GenAI-SDK-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/)
+[![MediaPipe](https://img.shields.io/badge/MediaPipe-Vision_Tasks-0072b2?style=for-the-badge)](https://developers.google.com/mediapipe)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-## Why FloraLens?
-
-Whether you're a seasoned botanist or just love discovering new plants, FloraLens makes plant identification effortless and fun. Simply snap a photo, and our intelligent AI does the hard work for you—bringing the wonders of nature right to your fingertips.
-
-## Features ✨
-
-- 📸 **AI-powered plant recognition**: Identify plants quickly with cutting-edge AI technology.
-- 📚 **Detailed plant profiles**: Learn about plant origins, care tips, and more.
-- 🖥️ **Responsive and intuitive UI**: A clean interface designed for smooth, enjoyable use.
-- 🔑 **Powered by Gemini API**: Harnessing the latest in AI to ensure accurate results.
-
-## Demo
-
-Experience the magic yourself by visiting our AI Studio app:
-
-[Try FloraLens on AI Studio](https://ai.studio/apps/drive/1klNdZo5TKQ0tV3uFBbtq_1kooWahyW5Q)
-
-## Getting Started 🚀
-
-Follow these simple steps to get FloraLens running on your local machine:
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) installed
-- A valid Gemini API key for AI recognition (sign up at [AI Studio](https://ai.studio))
-
-### Installation
-
-1. Clone this repository:
-
-   ```
-   git clone https://github.com/AnupamKhurana/FloraLens.git
-   cd FloraLens
-   ```
-
-2. Install dependencies:
-
-   ```
-   npm install
-   ```
-
-3. Configure your API key:
-
-   Create a `.env.local` file in the root directory with:
-
-   ```
-   GEMINI_API_KEY=your_gemini_api_key_here
-   ```
-
-4. Start the app:
-
-   ```
-   npm run dev
-   ```
-
-5. Open your browser and go to `http://localhost:3000` to start exploring plants instantly!
-
-## Contributing 🤝
-
-FloraLens is a growing project, and contributions are warmly welcomed! Feel free to:
-
-- Report issues
-- Suggest new features
-- Submit pull requests
-
-Please adhere to the code of conduct when contributing.
-
-## License
-
-Please check with the repository owner for license details.
+**FloraLens** is a modern, responsive web application engineered for botanists, gardeners, and plant lovers. Snap or upload any plant photo—including native iPhone HEIC formats—to instantly recognize species, retrieve botanical profiles, receive customized care instructions (watering, sunlight, soil), and chat with an interactive AI botanical assistant.
 
 ---
 
-Explore the world of plants like never before with FloraLens—where technology meets nature! 🌱
+## ✨ Key Features & Capabilities
+
+- 📸 **Instant Botanical Recognition**: Accurately classifies wild flora, house plants, succulents, trees, and flowers using Google's latest multimodal GenAI vision models.
+- 📱 **Native iPhone HEIC Support**: Built-in conversion via `heic2any` allows seamless photo uploads directly from iOS devices without manual format conversions.
+- 🪴 **Comprehensive Plant Profiles**: Displays binomial scientific names, family classifications, native origins, toxicity alerts (pet/child safety), and growth habits.
+- 💧 **Actionable Care & Maintenance Guides**: Provides specific watering schedules, light requirements, optimal humidity ranges, and soil composition advice.
+- 💬 **Interactive AI Plant Doctor**: Integrated botanical chatbot powered by `@google/genai` to troubleshoot yellowing leaves, pest infestations, pruning questions, and repotting advice.
+- ⚡ **Cutting-Edge React 19 Architecture**: Built on React 19, TypeScript, and Vite for blazing-fast bundle loading and instant client rendering.
+
+---
+
+## 🛠️ Architecture & Tech Stack
+
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend Framework** | [React 19](https://react.dev) + [TypeScript](https://www.typescriptlang.org/) | Next-gen client UI and strong type contracts |
+| **Build Tool** | [Vite 6](https://vitejs.dev/) | Ultra-fast HMR and build bundling |
+| **AI Vision Engine** | [@google/genai SDK](https://github.com/google-gemini/generative-ai-js) | Multimodal visual recognition & botanical reasoning |
+| **Edge Vision** | [@mediapipe/tasks-vision](https://developers.google.com/mediapipe) | On-device pre-processing and image orientation |
+| **Media Transcoder** | `heic2any` | Client-side conversion of Apple HEIC/HEIF images to JPEG/PNG |
+
+---
+
+## 📂 Project Structure
+
+```text
+FloraLens/
+├── components/
+│   ├── PlantCard.tsx     # Botanical profile, care metrics & toxicity warnings
+│   └── ChatBot.tsx       # Real-time conversational AI plant assistant
+├── App.tsx               # Primary dashboard & upload orchestration
+├── index.html            # Entry HTML markup
+├── index.tsx             # Root React mounting
+├── package.json          # Dependencies & scripts
+└── vite.config.ts        # Vite configuration
 ```
 
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- Node.js 18+ and npm
+- A Google Gemini API Key ([Get one for free at Google AI Studio](https://aistudio.google.com/))
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/AnupamKhurana/FloraLens.git
+cd FloraLens
+```
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Configure API Key
+Create a `.env.local` file in the root directory:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+### 4. Launch Development Server
+```bash
+npm run dev
+```
+Open your browser and navigate to: **`http://localhost:5173`** (or port specified by Vite).
+
+---
+
+## 💡 How It Works
+
+```
+  [ Take / Upload Photo ]
+             │
+             ├──▶ (Apple HEIC image?) ──▶ [ heic2any client conversion ]
+             │
+             ▼
+    [ MediaPipe Preprocessing ]
+             │
+             ▼
+  [ Google GenAI Vision Model ]
+             │
+             ├──▶ Structured Species & Family Match
+             ├──▶ Toxicity & Pet-Safety Warnings
+             ├──▶ Soil, Watering & Sun Requirements
+             └──▶ Interactive "Ask FloraLens" Q&A Assistant
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please open an issue or PR for:
+- Expanded plant species databases
+- Offline plant identification fallback
+- PWA / Mobile camera integration enhancements
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the `LICENSE` file for details.
